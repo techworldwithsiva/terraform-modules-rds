@@ -16,7 +16,6 @@ resource "aws_db_instance" "main" {
     )
 }
 
-
 resource "random_password" "password" {
   length           = 16
   special          = true
@@ -24,15 +23,21 @@ resource "random_password" "password" {
 }
 
 #store the password in secrets manager
-resource "aws_secretsmanager_secret" "rds" {
-  name = var.secret_name
-  tags = merge(
-        var.tags,
-        var.rds_tags
-    )
+
+# resource "aws_secretsmanager_secret" "rds" {
+#   name = var.secret_name
+#   tags = merge(
+#         var.tags,
+#         var.rds_tags
+#     )
+# }
+
+#We will create the secret outside of terraform, but we store the value through terraform
+data "aws_secretsmanager_secret" "rds_secret" {
+  arn = var.rds_secret_arn
 }
 
 resource "aws_secretsmanager_secret_version" "rds" {
-  secret_id     = aws_secretsmanager_secret.rds.id
+  secret_id     = data.aws_secretsmanager_secret.rds_secret.id
   secret_string = random_password.password.result
 }
